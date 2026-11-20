@@ -156,6 +156,7 @@ const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const fr = (d, o = { weekday: "long", day: "numeric", month: "long" }) => d ? new Date(d + "T12:00:00").toLocaleDateString("fr-FR", o) : "—";
 const frShort = (d) => fr(d, { day: "numeric", month: "short" });
 const eur = (n) => n == null ? "" : n.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+const imgUrl = (u) => { const m = String(u || "").match(/\/images\/I\/([A-Za-z0-9+%_-]+?)\./); return m ? `https://m.media-amazon.com/images/I/${encodeURIComponent(decodeURIComponent(m[1]))}._AC_SL300_.jpg` : "assets/icon.svg"; };
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const every = (n) => n % 7 === 0 && n <= 56 ? (n === 7 ? "toutes les semaines" : `toutes les ${n / 7} semaines`) : n >= 28 && n <= 33 ? "tous les mois" : `tous les ${n} jours`;
 function relDay(d, today) {
@@ -231,7 +232,7 @@ function card(it, today) {
   const tags = ko ? `<span class="tag ko">${it.status === "rupture" ? "Rupture de stock" : esc(it.lastError || "Erreur")}</span>` : low ? `<span class="tag low">Stock limité</span>` : "";
   return `<div class="card ${it.checked ? "" : "off"} ${ko ? "ko" : ""}">
     <div class="row">
-      <img class="thumb" src="${esc(it.image || "assets/icon.svg")}" alt="" loading="lazy">
+      <img class="thumb" src="${esc(imgUrl(it.image))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/icon.svg'">
       <div class="info">
         <div class="name">${esc(it.short || it.title)}</div>
         <div class="line"><b>${it.price ? eur(it.price * (it.qty || 1)) : "—"}</b>${it.qty > 1 ? `<span>×${it.qty}</span>` : ""}<span>${when}</span>${tags}</div>
