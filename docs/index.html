@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ff8a00">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Achats récurrents">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/icon.svg">
+<link rel="apple-touch-icon" href="assets/icon.svg">
+<title>Achats récurrents · Amazon</title>
+<style>
+  :root { --or:#ff8a00; --or2:#fff3e6; --ink:#1f2933; --mut:#6b7280; --ok:#16a34a; --ko:#dc2626; --line:#ece7e1; --bg:#fffaf5; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", Segoe UI, Roboto, sans-serif; overflow-x:hidden; }
+  button, input, label, a, .card { touch-action:manipulation; }
+  @media (hover:none) and (pointer:coarse) { #scroller { overscroll-behavior-y:contain; } }
+  #scroller { max-width:720px; margin:0 auto; padding:calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 40px); }
+  header { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  header img { width:46px; height:46px; border-radius:12px; flex:none; }
+  header h1 { font-size:21px; margin:0; }
+  header p { margin:0; color:var(--mut); font-size:13px; }
+  #sync { margin-left:auto; font-size:12px; color:var(--mut); white-space:nowrap; }
+  .banner { background:linear-gradient(135deg,#ff9d2e,#ff7a00); color:#fff; border-radius:16px; padding:14px 16px; margin:6px 0 14px; box-shadow:0 6px 18px #ff8a0033; }
+  .banner b { font-size:17px; }
+  .banner small { display:block; opacity:.92; margin-top:3px; }
+  h2 { font-size:14px; text-transform:uppercase; letter-spacing:.04em; color:var(--mut); margin:20px 4px 8px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:12px; margin-bottom:10px; display:grid; grid-template-columns:auto 56px 1fr; gap:10px 12px; align-items:start; min-width:0; }
+  .card.off { opacity:.55; }
+  .card.due { border-color:var(--or); box-shadow:0 0 0 2px #ff8a0022; }
+  .chk { width:30px; height:30px; margin-top:12px; accent-color:var(--or); }
+  .thumb { width:56px; height:56px; object-fit:contain; border-radius:10px; background:#f6f3ef; }
+  .main { min-width:0; }
+  .t { font-weight:600; font-size:15.5px; overflow-wrap:anywhere; }
+  .full { color:var(--mut); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; font-size:13px; }
+  .pill { background:var(--or2); color:#9a4b00; border-radius:999px; padding:2px 9px; }
+  .pill.ok { background:#e8f7ee; color:var(--ok); }
+  .pill.ko { background:#fdecec; color:var(--ko); font-weight:600; }
+  .ctrl { grid-column:1 / -1; display:grid; grid-template-columns:1.3fr 1fr .8fr; gap:8px; }
+  .ctrl label { font-size:11.5px; color:var(--mut); display:block; min-width:0; }
+  .ctrl input { width:100%; min-width:0; font-size:16px; padding:8px 8px; border:1px solid var(--line); border-radius:10px; background:#fcfbf9; color:var(--ink); }
+  .row2 { grid-column:1 / -1; display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:var(--mut); gap:8px; }
+  .row2 a { color:#0b6bcb; text-decoration:none; white-space:nowrap; }
+  .log { background:#fff; border:1px solid var(--line); border-radius:14px; padding:4px 12px; font-size:14px; }
+  .log div { padding:8px 0; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; gap:10px; }
+  .log div:last-child { border-bottom:0; }
+  .empty { color:var(--mut); text-align:center; padding:16px; }
+  #toast { position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 24px); transform:translateX(-50%) translateY(30px); background:#1f2933; color:#fff; padding:9px 16px; border-radius:999px; font-size:14px; opacity:0; transition:.25s; pointer-events:none; z-index:10; }
+  #toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
+  #ptr { position:fixed; top:calc(env(safe-area-inset-top) + 8px); left:50%; width:34px; height:34px; margin-left:-17px; border-radius:50%; background:#fff; box-shadow:0 2px 10px #0002; display:flex; align-items:center; justify-content:center; opacity:0; z-index:20; pointer-events:none; }
+  #ptr svg { width:20px; height:20px; color:var(--or); }
+  #ptr.spin svg { animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  #lock { display:none; text-align:center; padding:40px 16px; }
+  #lock input { font-size:16px; padding:10px; border-radius:10px; border:1px solid var(--line); width:100%; max-width:320px; margin:10px 0; }
+  #lock button, .btn { background:var(--or); color:#fff; border:0; border-radius:12px; padding:11px 18px; font-size:16px; font-weight:600; }
+  .help { color:var(--mut); font-size:12.5px; margin:22px 4px; }
+</style>
+</head>
+<body>
+<div id="ptr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></div>
+<div id="scroller">
+  <header>
+    <img src="assets/icon.svg" alt="">
+    <div><h1>Achats récurrents</h1><p>Compte Amazon de Marie</p></div>
+    <span id="sync">…</span>
+  </header>
+  <div id="lock">
+    <p>Ouvre l'app depuis le lien reçu par iMessage<br>(ou colle ici le code d'accès).</p>
+    <input id="code" placeholder="Code d'accès" autocomplete="off" autocapitalize="off">
+    <br><button id="unlock">Ouvrir</button>
+  </div>
+  <div id="app"></div>
+  <p class="help">Tout ce qui est <b>coché</b> est commandé automatiquement à la date prévue (référence exacte, adresse et carte habituelles). Le matin même, un iMessage prévient ; décocher avant <b>12h</b> annule. Un article décoché reste en pause jusqu'à ce qu'il soit recoché. En cas de rupture de stock, rien n'est commandé et un message prévient.</p>
+</div>
+<div id="toast"></div>
+<script src="data/vault.js"></script>
+<script src="data/embedded_data.js"></script>
+<script>
+const REPO_API = "https://api.github.com/repos/Mrthomaslef/amazon-recurrent-state/contents/state.json";
+const LS_KEY = "amzrec_key_v1", LS_STATE = "amzrec_state_v1";
+let token = null, state = null, sha = null, pending = {}, saveTimer = null;
+
+const $ = (s) => document.querySelector(s);
+const b64d = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
+const b64e = (u8) => { let s = ""; u8.forEach(b => s += String.fromCharCode(b)); return btoa(s); };
+async function aesKey(code) { const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code.trim())); return crypto.subtle.importKey("raw", h, "AES-GCM", false, ["decrypt"]); }
+async function decrypt(code, box) { const k = await aesKey(code); const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64d(box.iv) }, k, b64d(box.ct)); return new TextDecoder().decode(pt); }
+function toast(t) { const e = $("#toast"); e.textContent = t; e.classList.add("on"); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove("on"), 1800); }
+const todayStr = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
+const addDays = (d, n) => { const x = new Date(d + "T12:00:00Z"); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+const fr = (d) => d ? new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }) : "—";
+const eur = (n) => n == null ? "" : n.toFixed(2).replace(".", ",") + " €";
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+async function unlock(code) {
+  try {
+    token = await decrypt(code, window.AMZ_VAULT);
+    localStorage.setItem(LS_KEY, code.trim());
+    if (window.AMZ_ENC) { try { const snap = JSON.parse(await decrypt(code, window.AMZ_ENC)); if (!localStorage.getItem(LS_STATE)) localStorage.setItem(LS_STATE, JSON.stringify(snap)); } catch (e) {} }
+    $("#lock").style.display = "none";
+    return true;
+  } catch (e) { $("#lock").style.display = "block"; return false; }
+}
+
+async function load() {
+  $("#sync").textContent = "Synchro…";
+  try {
+    const r = await fetch(REPO_API + "?t=" + Date.now(), { headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" }, cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    sha = j.sha;
+    state = JSON.parse(new TextDecoder().decode(b64d(j.content.replace(/\n/g, ""))));
+    localStorage.setItem(LS_STATE, JSON.stringify(state));
+    $("#sync").textContent = "À jour ✓";
+  } catch (e) {
+    state = state || JSON.parse(localStorage.getItem(LS_STATE) || "null");
+    $("#sync").textContent = "Hors ligne";
+  }
+  render();
+}
+
+function patch(asin, changes) {
+  pending[asin] = { ...(pending[asin] || {}), ...changes };
+  const it = state.items.find(i => i.asin === asin); Object.assign(it, changes);
+  render();
+  clearTimeout(saveTimer); saveTimer = setTimeout(save, 500);
+}
+
+async function save() {
+  const ch = pending; pending = {};
+  if (!Object.keys(ch).length) return;
+  $("#sync").textContent = "Enregistrement…";
+  for (let i = 0; i < 4; i++) {
+    try {
+      // relit la dernière version pour ne jamais écraser une mise à jour faite par le Mac
+      const r = await fetch(REPO_API + "?t=" + Date.now(), { headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" }, cache: "no-store" });
+      const j = await r.json();
+      const fresh = JSON.parse(new TextDecoder().decode(b64d(j.content.replace(/\n/g, ""))));
+      for (const [asin, c] of Object.entries(ch)) { const it = fresh.items.find(x => x.asin === asin); if (it) Object.assign(it, c); }
+      fresh.updated = new Date().toISOString();
+      const body = { message: "app : " + Object.keys(ch).length + " modification(s)", sha: j.sha, content: b64e(new TextEncoder().encode(JSON.stringify(fresh, null, 1))) };
+      const w = await fetch(REPO_API, { method: "PUT", headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" }, body: JSON.stringify(body) });
+      if (w.status === 409 || w.status === 422) continue;
+      if (!w.ok) throw new Error(w.status);
+      sha = (await w.json()).content.sha; state = fresh;
+      localStorage.setItem(LS_STATE, JSON.stringify(state));
+      $("#sync").textContent = "Enregistré ✓"; toast("Enregistré ✓"); render();
+      return;
+    } catch (e) { if (i === 3) break; }
+  }
+  pending = { ...ch, ...pending };
+  $("#sync").textContent = "Non enregistré ⚠️"; toast("Pas de réseau — réessaie");
+}
+
+function card(it, today) {
+  const due = it.checked && it.next <= today;
+  const st = it.status === "rupture" ? `<span class="pill ko">⚠️ Rupture</span>` : it.status === "erreur" ? `<span class="pill ko">⚠️ ${esc(it.lastError || "Erreur")}</span>` : (it.price ? `<span class="pill ok">En stock</span>` : "");
+  return `<div class="card ${it.checked ? "" : "off"} ${due ? "due" : ""}">
+    <input type="checkbox" class="chk" data-a="${it.asin}" ${it.checked ? "checked" : ""} aria-label="Commander automatiquement">
+    <img class="thumb" src="${esc(it.image || "assets/icon.svg")}" alt="" loading="lazy">
+    <div class="main">
+      <div class="t">${esc(it.short || it.title)}</div>
+      <div class="full">${esc(it.title)}</div>
+      <div class="meta">${it.price ? `<span class="pill">${eur(it.price)}${it.qty > 1 ? " ×" + it.qty : ""}</span>` : ""}${st}
+        <span class="pill">${it.checked ? (due ? "Commande aujourd'hui 12h" : "Prochaine : " + fr(it.next)) : "En pause"}</span></div>
+    </div>
+    <div class="ctrl">
+      <label>Prochaine commande<input type="date" value="${it.next}" min="${today}" data-a="${it.asin}" data-f="next"></label>
+      <label>Tous les (jours)<input type="number" inputmode="numeric" min="3" max="400" value="${it.interval}" data-a="${it.asin}" data-f="interval"></label>
+      <label>Quantité<input type="number" inputmode="numeric" min="1" max="10" value="${it.qty || 1}" data-a="${it.asin}" data-f="qty"></label>
+    </div>
+    <div class="row2"><span>Acheté ${it.count}× · dernier ${fr(it.last)}</span><a href="https://www.amazon.fr/dp/${it.asin}" target="_blank" rel="noopener">Voir sur Amazon ↗</a></div>
+  </div>`;
+}
+
+function render() {
+  if (!state) { $("#app").innerHTML = `<p class="empty">Chargement…</p>`; return; }
+  const today = todayStr(), week = addDays(today, 7);
+  const items = [...state.items].sort((a, b) => a.next.localeCompare(b.next));
+  const on = items.filter(i => i.checked), off = items.filter(i => !i.checked);
+  const due = on.filter(i => i.next <= today), wk = on.filter(i => i.next > today && i.next <= week), later = on.filter(i => i.next > week);
+  const rupt = on.filter(i => i.status === "rupture");
+  let h = "";
+  if (due.length) h += `<div class="banner"><b>🛒 ${due.length} article${due.length > 1 ? "s" : ""} commandé${due.length > 1 ? "s" : ""} aujourd'hui à 12h</b><small>Décoche ce que tu ne veux pas avant midi.</small></div>`;
+  else h += `<div class="banner"><b>${on.length} achats automatiques actifs</b><small>Prochaine commande : ${on[0] ? fr(on[0].next) + " — " + esc(on[0].short) : "aucune"}</small></div>`;
+  if (rupt.length) h += `<div class="banner" style="background:linear-gradient(135deg,#ef4444,#b91c1c)"><b>⚠️ Rupture de stock</b><small>${rupt.map(i => esc(i.short)).join(", ")} — rien n'est commandé tant que ce n'est pas revenu.</small></div>`;
+  const sec = (t, arr) => arr.length ? `<h2>${t}</h2>` + arr.map(i => card(i, today)).join("") : "";
+  h += sec("Aujourd'hui", due) + sec("Dans les 7 jours", wk) + sec("Plus tard", later) + sec("En pause (décochés)", off);
+  const log = (state.log || []).slice(0, 15);
+  h += `<h2>Dernières commandes automatiques</h2><div class="log">${log.length ? log.map(l => `<div><span>${esc(l.title)}${l.qty > 1 ? " ×" + l.qty : ""}</span><span>${fr(l.date)}${l.total ? " · " + eur(l.total) : ""}</span></div>`).join("") : `<div class="empty">Aucune pour l'instant</div>`}</div>`;
+  $("#app").innerHTML = h;
+}
+
+document.addEventListener("change", (e) => {
+  const t = e.target, a = t.dataset.a; if (!a) return;
+  if (t.classList.contains("chk")) return patch(a, { checked: t.checked });
+  const f = t.dataset.f;
+  if (f === "next" && t.value) return patch(a, { next: t.value < todayStr() ? todayStr() : t.value });
+  if (f === "interval") { const v = Math.max(3, Math.min(400, parseInt(t.value) || 30)); return patch(a, { interval: v }); }
+  if (f === "qty") { const v = Math.max(1, Math.min(10, parseInt(t.value) || 1)); return patch(a, { qty: v }); }
+});
+
+/* Pull-to-refresh (tactile + souris) — flèche circulaire seule */
+(function () {
+  const ptr = $("#ptr"); let y0 = null, dy = 0;
+  const start = (y) => { if (window.scrollY <= 0) { y0 = y; dy = 0; } };
+  const move = (y) => { if (y0 == null) return; dy = Math.max(0, Math.min(110, y - y0)); ptr.style.opacity = Math.min(1, dy / 70); ptr.style.transform = `translateY(${dy / 2}px) rotate(${dy * 3}deg)`; };
+  const end = async () => {
+    if (y0 == null) return; y0 = null;
+    if (dy > 70) { ptr.classList.add("spin"); navigator.vibrate && navigator.vibrate(12); await load(); }
+    ptr.classList.remove("spin"); ptr.style.opacity = 0; ptr.style.transform = ""; dy = 0;
+  };
+  addEventListener("touchstart", e => start(e.touches[0].clientY), { passive: true });
+  addEventListener("touchmove", e => move(e.touches[0].clientY), { passive: true });
+  addEventListener("touchend", end);
+  addEventListener("mousedown", e => { if (e.target.closest("input,a,button,label")) return; start(e.clientY); });
+  addEventListener("mousemove", e => { if (e.buttons) move(e.clientY); });
+  addEventListener("mouseup", end);
+})();
+
+$("#unlock").onclick = async () => { if (await unlock($("#code").value)) load(); else toast("Code incorrect"); };
+document.addEventListener("visibilitychange", () => { if (!document.hidden && token) load(); });
+
+(async () => {
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  const m = location.hash.match(/k=([\w-]+)/);
+  if (m) { history.replaceState(null, "", location.pathname); }
+  const code = (m && m[1]) || localStorage.getItem(LS_KEY);
+  if (code && await unlock(code)) { state = JSON.parse(localStorage.getItem(LS_STATE) || "null"); render(); load(); }
+  else { $("#lock").style.display = "block"; render(); $("#app").innerHTML = ""; }
+})();
+</script>
+</body>
+</html>

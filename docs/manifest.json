@@ -1,0 +1,2 @@
+{ "name": "Achats récurrents Amazon", "short_name": "Achats récurrents", "start_url": "./", "display": "standalone",
+  "background_color": "#fff8f0", "theme_color": "#ff8a00", "icons": [{ "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }] }
