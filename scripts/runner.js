@@ -50,7 +50,7 @@ async function morning() {
       if (isDue(it)) (it.status === "ok" ? due : rupture).push(it);
       else if (it.status === "rupture" && it.ruptureNotified !== it.next) { soon.push(it); it.ruptureNotified = it.next; }
     }
-    s.today = { date: today, notified: due.map(i => i.asin), rupture: rupture.map(i => i.asin) };
+    s.today = { date: today, at: new Date().toISOString(), notified: due.map(i => i.asin), rupture: rupture.map(i => i.asin) };
   }, `matin ${today}`);
 
   const lines = [];
@@ -78,7 +78,10 @@ async function order() {
   const { state } = await st.load();
   const due = state.items.filter(it => it.checked && isDue(it));
   // Sécurité : jamais de commande si Marie n'a pas été prévenue ce matin.
-  const notified = new Set(state.today && state.today.date === today ? state.today.notified : []);
+  // …et au moins 90 min de délai pour qu'elle puisse décocher (Mac en veille à 8h → message tardif → commande reportée à demain).
+  const t = state.today || {};
+  const delayOk = t.at && Date.now() - Date.parse(t.at) >= 90 * 60 * 1000;
+  const notified = new Set(t.date === today && delayOk ? t.notified : []);
   const toBuy = DRY ? due : due.filter(it => notified.has(it.asin));
   if (!toBuy.length) return console.log(today, "rien à commander");
   const results = await withBrowser(async (page) => {
