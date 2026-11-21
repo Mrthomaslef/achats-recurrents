@@ -9,7 +9,7 @@ const SHORT = {
   B082VVLKTG: "Vanish détachant pistolet", B0CQP8J8QC: "Erborian Super BB Concealer",
   B0CRL656TK: "Stick anti-crevasses Scholl", B0C6R5TD9D: "Déodorant Dove Advanced Care",
   B083TX6VBG: "Erborian CC Dull Correct", B0CB6TBT3Y: "Masque Wella Invigo Nutri-Enrich",
-  B008MT0CVS: "Déboucheur Ouragan gel 1 L", B0DHSS4ZW3: "Eau de toilette Biolane bébé",
+  B008MT0CVS: "Déboucheur Ouragan gel 1 L", B0DHSS4ZW3: "Eau de toilette Biolane bébé", B0DG2MT3K2: "Dentifrice Oral-B 3D White Arctic Fresh ×3",
 };
 (async () => {
   const items = JSON.parse(fs.readFileSync(path.join(__dirname, "../data/items.json"), "utf8"));
