@@ -1,4 +1,4 @@
-const CACHE = "achats-recurrents-v4";
+const CACHE = "achats-recurrents-v5";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./assets/icon.svg", "./data/vault.js", "./data/embedded_data.js"];
 self.addEventListener("install", e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS))); });
 self.addEventListener("activate", e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));

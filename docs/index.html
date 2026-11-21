@@ -248,7 +248,7 @@ function card(it, today) {
           <label>Quantité<input type="number" inputmode="numeric" min="1" max="10" value="${it.qty || 1}" data-a="${it.asin}" data-f="qty"></label>
         </div>
         <div class="fulltitle">${esc(it.title)}</div>
-        <div class="foot"><span>Acheté ${it.count} fois · dernière fois le ${frShort(it.last)}</span><a href="https://www.amazon.fr/dp/${it.asin}" target="_blank" rel="noopener">Fiche Amazon ↗</a></div>
+        <div class="foot"><span>${it.count && it.last ? `Acheté ${it.count} fois · dernière fois le ${frShort(it.last)}` : "Jamais encore commandé"}</span><a href="https://www.amazon.fr/dp/${it.asin}" target="_blank" rel="noopener">Fiche Amazon ↗</a></div>
       </div>
     </details>
   </div>`;
