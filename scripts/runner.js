@@ -50,7 +50,8 @@ async function morning() {
       if (isDue(it)) (it.status === "ok" ? due : rupture).push(it);
       else if (it.status === "rupture" && it.ruptureNotified !== it.next) { soon.push(it); it.ruptureNotified = it.next; }
     }
-    s.today = { date: today, at: new Date().toISOString(), notified: due.map(i => i.asin), rupture: rupture.map(i => i.asin) };
+    // « notified » n'est rempli qu'APRÈS l'envoi réel du message à Marie (sinon pas de commande à 12h).
+    s.today = { date: today, at: new Date().toISOString(), notified: [], pending: due.map(i => i.asin), rupture: rupture.map(i => i.asin) };
   }, `matin ${today}`);
 
   const lines = [];
@@ -70,7 +71,12 @@ async function morning() {
   }
   if (!lines.length) return console.log(today, "rien à signaler");
   lines.push("", due.length ? `Pour annuler un article, décoche-le avant 12h : ${APP_URL}` : `Gérer les achats : ${APP_URL}`);
-  notify.marie(lines.join("\n"));
+  try { notify.marie(lines.join("\n")); }
+  catch (e) {
+    notify.thomas(`⚠️ Achats récurrents Amazon : le message du matin n'a pas pu être envoyé à Marie → pas de commande aujourd'hui (${due.map(name).join(", ") || "rien de prévu"}). ${String(e).slice(0, 120)}`);
+    throw e;
+  }
+  if (due.length && !DRY) await st.update((s) => { if (s.today?.date === today) { s.today.notified = s.today.pending || []; s.today.at = new Date().toISOString(); } }, `Marie prévenue ${today}`);
   if (rupture.length || soon.length) notify.thomas("Achats récurrents Amazon — rupture : " + [...rupture, ...soon].map(name).join(", "));
 }
 
@@ -103,7 +109,7 @@ async function order() {
         x.last = today; x.next = addDays(today, x.interval); x.count = (x.count || 0) + 1; x.status = "ok"; delete x.ruptureNotified;
         s.log.unshift({ date: today, asin: x.asin, title: name(x), qty: x.qty || 1, total: r.total, orderId: r.orderId });
       } else {
-        x.status = /rupture|indisponible/i.test(r.reason) ? "rupture" : "erreur"; x.lastError = r.reason;
+        x.status = r.retry ? "ok" : /rupture|indisponible/i.test(r.reason) ? "rupture" : "erreur"; x.lastError = r.reason;
       }
     }
     s.log = s.log.slice(0, 200);
@@ -122,7 +128,7 @@ async function order() {
     else { console.log("usage: runner.js morning|order [--dry-run] [--date=AAAA-MM-JJ]"); process.exit(1); }
   } catch (e) {
     console.error(e);
-    if (!DRY && !/^Error: login/.test(String(e))) notify.thomas("⚠️ Achats récurrents Amazon (" + mode + ") : " + String(e).slice(0, 200));
+    if (!DRY && !/^Error: (login|iMessage non envoyé à \+)/.test(String(e))) notify.thomas("⚠️ Achats récurrents Amazon (" + mode + ") : " + String(e).slice(0, 200));
     process.exit(1);
   }
 })();
